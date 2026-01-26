@@ -74,9 +74,9 @@ Plugins/**/Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 
-# VSCode generated files (keep tasks.json and launch.json)
-.vscode/c_cpp_properties.json
-.vscode/compile_commands.json
-.vscode/compileCommands_*.json
-.vscode/compileCommands_*/
-.vscode/.cache/
+# VSCode generated files
+.vscode/*
+!.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+*.code-workspace
