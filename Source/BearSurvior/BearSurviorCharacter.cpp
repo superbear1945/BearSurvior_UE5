@@ -68,7 +68,12 @@ void ABearSurviorCharacter::BeginPlay()
 void ABearSurviorCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	UpdateAimCamera(DeltaSeconds);
+}
 
+
+void ABearSurviorCharacter::UpdateAimCamera(float DeltaSeconds)
+{
 	if (!CameraBoom)
 	{
 		return;

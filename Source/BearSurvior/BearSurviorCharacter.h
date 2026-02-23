@@ -75,6 +75,9 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
+	/** Updates smooth camera blend for aim state */
+	void UpdateAimCamera(float DeltaSeconds);
+
 public:
 
 	/** Handles move inputs from either controls or UI interfaces */
@@ -104,15 +107,15 @@ public:
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim")
-	float AimTargetArmLength = 300.f;
+	float AimTargetArmLength = 220.f;
 
 	// 在瞄准状态时，摄像头偏移量相对于默认位置的偏移
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim")
-	FVector AimSocketOffset = FVector(0.f, 60.f, 10.f);
+	FVector AimSocketOffset = FVector(0.f, 45.f, 20.f);
 
 	// 进入瞄准状态时，摄像机过渡到目标位置的时间，单位为秒
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim", meta=(ClampMin="0.0", UIMin="0.0"))
-	float AimTransitionTime = 0.15f;
+	float AimTransitionTime = 0.12f;
 
 	float DefaultTargetArmLength = 0.f;
 	FVector DefaultSocketOffset = FVector::ZeroVector;
