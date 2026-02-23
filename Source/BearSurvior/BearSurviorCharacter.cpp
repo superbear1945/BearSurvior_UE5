@@ -72,6 +72,7 @@ void ABearSurviorCharacter::Tick(float DeltaSeconds)
 }
 
 
+// 平滑过渡摄像机位置以适应瞄准状态
 void ABearSurviorCharacter::UpdateAimCamera(float DeltaSeconds)
 {
 	if (!CameraBoom)
