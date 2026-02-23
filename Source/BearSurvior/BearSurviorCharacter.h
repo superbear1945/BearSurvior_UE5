@@ -49,10 +49,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
 	UInputAction* MouseLookAction;
 
+	/** Aim Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+	UInputAction* AimAction;
+
 public:
 
 	/** Constructor */
 	ABearSurviorCharacter();	
+
+	virtual void Tick(float DeltaSeconds) override;
+
+	virtual void BeginPlay() override;
 
 protected:
 
@@ -84,6 +92,33 @@ public:
 	/** Handles jump pressed inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
+
+	/** Handles aim pressed inputs from either controls or UI interfaces */
+	UFUNCTION(BlueprintCallable, Category="Input")
+	virtual void DoAimStart();
+
+	/** Handles aim released inputs from either controls or UI interfaces */
+	UFUNCTION(BlueprintCallable, Category="Input")
+	virtual void DoAimEnd();
+
+protected:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim")
+	float AimTargetArmLength = 300.f;
+
+	// 在瞄准状态时，摄像头偏移量相对于默认位置的偏移
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim")
+	FVector AimSocketOffset = FVector(0.f, 60.f, 10.f);
+
+	// 进入瞄准状态时，摄像机过渡到目标位置的时间，单位为秒
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim", meta=(ClampMin="0.0", UIMin="0.0"))
+	float AimTransitionTime = 0.15f;
+
+	float DefaultTargetArmLength = 0.f;
+	FVector DefaultSocketOffset = FVector::ZeroVector;
+
+	float AimBlendAlpha = 0.f;
+	bool bIsAiming = false;
 
 public:
 

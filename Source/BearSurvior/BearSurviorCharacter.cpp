@@ -15,6 +15,8 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 ABearSurviorCharacter::ABearSurviorCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -51,6 +53,41 @@ ABearSurviorCharacter::ABearSurviorCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
+void ABearSurviorCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (CameraBoom)
+	{
+		DefaultTargetArmLength = CameraBoom->TargetArmLength;
+		DefaultSocketOffset = CameraBoom->SocketOffset;
+		AimBlendAlpha = bIsAiming ? 1.f : 0.f;
+	}
+}
+
+void ABearSurviorCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!CameraBoom)
+	{
+		return;
+	}
+
+	const float TargetAlpha = bIsAiming ? 1.f : 0.f;
+	if (AimTransitionTime <= KINDA_SMALL_NUMBER)
+	{
+		AimBlendAlpha = TargetAlpha;
+	}
+	else
+	{
+		AimBlendAlpha = FMath::FInterpConstantTo(AimBlendAlpha, TargetAlpha, DeltaSeconds, 1.f / AimTransitionTime);
+	}
+
+	CameraBoom->TargetArmLength = FMath::Lerp(DefaultTargetArmLength, AimTargetArmLength, AimBlendAlpha);
+	CameraBoom->SocketOffset = FMath::Lerp(DefaultSocketOffset, AimSocketOffset, AimBlendAlpha);
+}
+
 void ABearSurviorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
@@ -66,6 +103,11 @@ void ABearSurviorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABearSurviorCharacter::Look);
+
+		// Aiming
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &ABearSurviorCharacter::DoAimStart);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ABearSurviorCharacter::DoAimEnd);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Canceled, this, &ABearSurviorCharacter::DoAimEnd);
 	}
 	else
 	{
@@ -131,4 +173,14 @@ void ABearSurviorCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void ABearSurviorCharacter::DoAimStart()
+{
+	bIsAiming = true;
+}
+
+void ABearSurviorCharacter::DoAimEnd()
+{
+	bIsAiming = false;
 }
