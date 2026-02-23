@@ -63,6 +63,12 @@ void ABearSurviorCharacter::BeginPlay()
 		DefaultSocketOffset = CameraBoom->SocketOffset;
 		AimBlendAlpha = bIsAiming ? 1.f : 0.f;
 	}
+
+	if (FollowCamera)
+	{
+		// 缓存角色默认相机 FOV，用于退出瞄准时平滑恢复
+		DefaultCameraFov = FollowCamera->FieldOfView;
+	}
 }
 
 void ABearSurviorCharacter::Tick(float DeltaSeconds)
@@ -92,6 +98,12 @@ void ABearSurviorCharacter::UpdateAimCamera(float DeltaSeconds)
 
 	CameraBoom->TargetArmLength = FMath::Lerp(DefaultTargetArmLength, AimTargetArmLength, AimBlendAlpha);
 	CameraBoom->SocketOffset = FMath::Lerp(DefaultSocketOffset, AimSocketOffset, AimBlendAlpha);
+
+	if (FollowCamera)
+	{
+		// 根据瞄准混合系数平滑调整 FOV：非瞄准使用默认值，瞄准使用 AimFov
+		FollowCamera->SetFieldOfView(FMath::Lerp(DefaultCameraFov, AimFov, AimBlendAlpha));
+	}
 }
 
 void ABearSurviorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
