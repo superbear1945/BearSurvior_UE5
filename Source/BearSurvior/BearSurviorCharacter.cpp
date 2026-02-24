@@ -15,16 +15,18 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 ABearSurviorCharacter::ABearSurviorCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
@@ -51,6 +53,59 @@ ABearSurviorCharacter::ABearSurviorCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
+void ABearSurviorCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (CameraBoom)
+	{
+		DefaultTargetArmLength = CameraBoom->TargetArmLength;
+		DefaultSocketOffset = CameraBoom->SocketOffset;
+		AimBlendAlpha = bIsAiming ? 1.f : 0.f;
+	}
+
+	if (FollowCamera)
+	{
+		// 缓存角色默认相机 FOV，用于退出瞄准时平滑恢复
+		DefaultCameraFov = FollowCamera->FieldOfView;
+	}
+}
+
+void ABearSurviorCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	UpdateAimCamera(DeltaSeconds);
+}
+
+
+// 平滑过渡摄像机位置以适应瞄准状态
+void ABearSurviorCharacter::UpdateAimCamera(float DeltaSeconds)
+{
+	if (!CameraBoom)
+	{
+		return;
+	}
+
+	const float TargetAlpha = bIsAiming ? 1.f : 0.f;
+	if (AimTransitionTime <= KINDA_SMALL_NUMBER)
+	{
+		AimBlendAlpha = TargetAlpha;
+	}
+	else
+	{
+		AimBlendAlpha = FMath::FInterpConstantTo(AimBlendAlpha, TargetAlpha, DeltaSeconds, 1.f / AimTransitionTime);
+	}
+
+	CameraBoom->TargetArmLength = FMath::Lerp(DefaultTargetArmLength, AimTargetArmLength, AimBlendAlpha);
+	CameraBoom->SocketOffset = FMath::Lerp(DefaultSocketOffset, AimSocketOffset, AimBlendAlpha);
+
+	if (FollowCamera)
+	{
+		// 根据瞄准混合系数平滑调整 FOV：非瞄准使用默认值，瞄准使用 AimFov
+		FollowCamera->SetFieldOfView(FMath::Lerp(DefaultCameraFov, AimFov, AimBlendAlpha));
+	}
+}
+
 void ABearSurviorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
@@ -66,6 +121,11 @@ void ABearSurviorCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABearSurviorCharacter::Look);
+
+		// Aiming
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &ABearSurviorCharacter::DoAimStart);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ABearSurviorCharacter::DoAimEnd);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Canceled, this, &ABearSurviorCharacter::DoAimEnd);
 	}
 	else
 	{
@@ -131,4 +191,14 @@ void ABearSurviorCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void ABearSurviorCharacter::DoAimStart()
+{
+	bIsAiming = true;
+}
+
+void ABearSurviorCharacter::DoAimEnd()
+{
+	bIsAiming = false;
 }

@@ -49,10 +49,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
 	UInputAction* MouseLookAction;
 
+	/** Aim Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+	UInputAction* AimAction;
+
 public:
 
 	/** Constructor */
 	ABearSurviorCharacter();	
+
+	virtual void Tick(float DeltaSeconds) override;
+
+	virtual void BeginPlay() override;
 
 protected:
 
@@ -66,6 +74,9 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	/** Updates smooth camera blend for aim state */
+	void UpdateAimCamera(float DeltaSeconds);
 
 public:
 
@@ -84,6 +95,38 @@ public:
 	/** Handles jump pressed inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
+
+	/** Handles aim pressed inputs from either controls or UI interfaces */
+	UFUNCTION(BlueprintCallable, Category="Input")
+	virtual void DoAimStart();
+
+	/** Handles aim released inputs from either controls or UI interfaces */
+	UFUNCTION(BlueprintCallable, Category="Input")
+	virtual void DoAimEnd();
+
+protected:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim")
+	float AimTargetArmLength = 220.f;
+
+	// 在瞄准状态时，摄像头偏移量相对于默认位置的偏移
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim")
+	FVector AimSocketOffset = FVector(0.f, 45.f, 20.f);
+
+	// 在瞄准状态时，相机目标视野角（FOV）
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim", meta=(ClampMin="1.0", ClampMax="179.0", UIMin="30.0", UIMax="120.0"))
+	float AimFov = 70.f;
+
+	// 进入瞄准状态时，摄像机过渡到目标位置的时间，单位为秒
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Aim", meta=(ClampMin="0.0", UIMin="0.0"))
+	float AimTransitionTime = 0.12f;
+
+	float DefaultTargetArmLength = 0.f;
+	FVector DefaultSocketOffset = FVector::ZeroVector;
+	float DefaultCameraFov = 90.f;
+
+	float AimBlendAlpha = 0.f;
+	bool bIsAiming = false;
 
 public:
 
